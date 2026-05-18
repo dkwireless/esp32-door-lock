@@ -1,0 +1,9 @@
+secrets.yaml
+*.bin
+*.pioenvs
+.pio
+esphome/.esphome/
+esphome/build/
+__pycache__/
+*.pyc
+.DS_Store

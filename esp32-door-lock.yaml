@@ -1,0 +1,99 @@
+substitutions:
+  devicename: esp32-door-lock
+  device_ip: 192.168.7.50
+  lock_mac: "E4:E1:12:C7:5C:52"
+  mqtt_topic_prefix: "tele/maindoor"
+
+esphome:
+  name: $devicename
+  friendly_name: esp32-door-lock
+  comment: "ESP32-C3 Airbnk BLE-to-MQTT Gateway - 192.168.7.50"
+  includes:
+    - airbnk-gateway.h
+  libraries:
+    - "h2zero/NimBLE-Arduino"
+
+esp32:
+  board: esp32-c3-devkitc-02
+  framework:
+    type: esp-idf
+
+# Hack: needed for custom_component lambda in ESPHome 2025.2+
+external_components:
+  - source:
+      type: git
+      url: https://github.com/robertklep/esphome-custom-component
+      ref: main
+    components: [ custom, custom_component ]
+
+bluetooth_proxy:
+
+esp32_ble:
+#  disable_bt_logs: true
+
+esp32_ble_tracker:
+  scan_parameters:
+    active: true
+    continuous: true
+
+logger:
+  level: INFO
+
+mqtt:
+  broker: 192.168.6.11
+  username: mqttuser
+  password: !secret mqttpassword
+  discovery: false
+  topic_prefix: ${mqtt_topic_prefix}
+  log_topic: null
+  birth_message:
+    topic: ${mqtt_topic_prefix}/LWT
+    payload: Online
+  will_message:
+    topic: ${mqtt_topic_prefix}/LWT
+    payload: Offline
+
+api:
+  encryption:
+    key: "N+eLUSJpfJMtxYDjs9KXt7A8de2O0Y8L2ug2S8g7jls="
+  on_client_connected:
+    - esp32_ble_tracker.start_scan:
+        continuous: true
+  on_client_disconnected:
+    - esp32_ble_tracker.stop_scan
+
+ota:
+  - platform: esphome
+    password: "3d7037b0d5b76ffd247c8043ce4dce8a"
+
+wifi:
+  networks:
+  - ssid: !secret wifi_ssid
+    password: !secret wifi_password
+    priority: 1
+  - ssid: 5G24
+    password: !secret wifi_password
+    priority: 0
+  manual_ip:
+    static_ip: ${device_ip}
+    gateway: 192.168.6.4
+    subnet: 255.255.254.0
+  power_save_mode: none
+
+# Airbnk BLE-to-MQTT Gateway
+# Communicates with rospogrigio/airbnk_mqtt HA integration
+# Topics:
+#   ${mqtt_topic_prefix}/adv        - lock BLE advertisement data
+#   ${mqtt_topic_prefix}/command    - incoming commands (from HA integration)
+#   ${mqtt_topic_prefix}/command_result - command execution result
+custom_component:
+  - lambda: |-
+      auto airbnk_node = new AirbnkGatewayNodeComponent(
+        "${lock_mac}",
+        "${mqtt_topic_prefix}"
+      );
+      return {airbnk_node};
+
+switch:
+  - platform: restart
+    name: "${devicename} Restart"

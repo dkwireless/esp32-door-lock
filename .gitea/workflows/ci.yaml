@@ -1,0 +1,26 @@
+name: ESPHome Compile Check
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  esphome-compile:
+    runs-on: ubuntu-latest
+    container:
+      image: esphome/esphome:latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Create secrets.yaml
+        run: |
+          echo 'wifi_ssid: "test"' > secrets.yaml
+          echo 'wifi_password: "test"' >> secrets.yaml
+          echo 'fallback_password: "test"' >> secrets.yaml
+          echo 'mqttpassword: "test"' >> secrets.yaml
+          echo 'api_encryption_key: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="' >> secrets.yaml
+          echo 'ota_password: "test"' >> secrets.yaml
+      - name: Validate ESPHome config
+        run: esphome config esp32-door-lock.yaml
+      - name: Compile firmware
+        run: esphome compile esp32-door-lock.yaml
