@@ -7,34 +7,33 @@ substitutions:
 esphome:
   name: $devicename
   friendly_name: esp32-door-lock
-  comment: "ESP32-C3 Airbnk BLE-to-MQTT Gateway - 192.168.7.50"
-  includes:
-    - airbnk-gateway.h
-  libraries:
-    - "h2zero/NimBLE-Arduino"
+  comment: "ESP32-C3 Airbnk BLE-to-MQTT Gateway - .7.50"
 
 esp32:
   board: esp32-c3-devkitc-02
   framework:
     type: esp-idf
 
-# Hack: needed for custom_component lambda in ESPHome 2025.2+
 external_components:
   - source:
-      type: git
-      url: https://github.com/robertklep/esphome-custom-component
-      ref: main
-    components: [ custom, custom_component ]
+      type: local
+      path: components
 
 bluetooth_proxy:
 
 esp32_ble:
-#  disable_bt_logs: true
 
 esp32_ble_tracker:
   scan_parameters:
     active: true
     continuous: true
+
+airbnk_gateway:
+  id: airbnk_component
+  mac_address: "${lock_mac}"
+  topic_prefix: "${mqtt_topic_prefix}"
+  manufacturer_key: ""
+  binding_key: ""
 
 logger:
   level: INFO
@@ -79,20 +78,6 @@ wifi:
     gateway: 192.168.6.4
     subnet: 255.255.254.0
   power_save_mode: none
-
-# Airbnk BLE-to-MQTT Gateway
-# Communicates with rospogrigio/airbnk_mqtt HA integration
-# Topics:
-#   ${mqtt_topic_prefix}/adv        - lock BLE advertisement data
-#   ${mqtt_topic_prefix}/command    - incoming commands (from HA integration)
-#   ${mqtt_topic_prefix}/command_result - command execution result
-custom_component:
-  - lambda: |-
-      auto airbnk_node = new AirbnkGatewayNodeComponent(
-        "${lock_mac}",
-        "${mqtt_topic_prefix}"
-      );
-      return {airbnk_node};
 
 switch:
   - platform: restart
