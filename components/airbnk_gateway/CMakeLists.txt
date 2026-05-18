@@ -1,0 +1,20 @@
+idf_component_register(
+    SRCS
+        "src/airbnk_utils.c"
+        "src/airbnk_ble.c"
+        "src/airbnk_mqtt.c"
+        "src/airbnk_gateway.c"
+    INCLUDE_DIRS
+        "include"
+    REQUIRES
+        nvs_flash
+        esp_wifi
+        esp_netif
+        esp_event
+        mqtt
+        bt
+        nimble
+        json
+        log
+        esp_timer
+)

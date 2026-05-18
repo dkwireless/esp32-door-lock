@@ -1,0 +1,8 @@
+# ESP-IDF project for Airbnk BLE-to-MQTT Gateway
+cmake_minimum_required(VERSION 3.16)
+
+# Set the component path to pick up our custom component
+set(EXTRA_COMPONENT_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/components)
+
+include($ENV{IDF_PATH}/tools/cmake/project.cmake)
+project(esp32-door-lock)
