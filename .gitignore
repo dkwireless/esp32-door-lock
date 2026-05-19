@@ -1,17 +1,5 @@
-secrets.yaml
-*.bin
-*.pioenvs
-.pio
-esphome/.esphome/
-esphome/build/
-.esphome/
-__pycache__/
-*.pyc
-.DS_Store
-
-# ESP-IDF build artifacts
-build/
-sdkconfig
-sdkconfig.old
-managed_components/
-dependencies.lock
+# Gitignore settings for ESPHome
+# This is an example and may include too much for your use-case.
+# You can modify this file to suit your needs.
+/.esphome/
+/secrets.yaml

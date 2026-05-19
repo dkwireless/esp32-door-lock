@@ -1,84 +1,101 @@
+# ESPHome — Airbnk BLE-MQTT Bridge
+# ESP32-C3, ESP-IDF NimBLE 5.5.4, esphome 2026.4+
+#
+# Pure MQTT bridge: all state → airbnk/{device_id}/state (JSON)
+# Commands → airbnk/{device_id}/command: {"action":"unlock"|"lock"}
+
 substitutions:
-  devicename: esp32-door-lock
-  device_ip: 192.168.7.50
-  lock_mac: "E4:E1:12:C7:5C:52"
-  mqtt_topic_prefix: "tele/maindoor"
+  name: "esp32-door-lock"
+  friendly_name: "ESP32 Door Lock Bridge"
+  device_id: "aaa5a38"
 
 esphome:
-  name: $devicename
-  friendly_name: esp32-door-lock
-  comment: "ESP32-C3 Airbnk BLE-to-MQTT Gateway - .7.50"
+  name: ${name}
+  friendly_name: ${friendly_name}
+  platformio_options:
+    board_build.flash_mode: dio
+    board_build.f_cpu: "160000000L"
 
 esp32:
-  board: esp32-c3-devkitc-02
+  board: esp32-c3-devkitm-1
   framework:
     type: esp-idf
+    version: "5.5.4"
+    sdkconfig_options:
+      CONFIG_BT_ENABLED: "y"
+      CONFIG_BTDM_CTRL_MODE_BLE_ONLY: "y"
+      CONFIG_BT_BLUEDROID_ENABLED: "n"
+      CONFIG_BT_NIMBLE_ENABLED: "y"
+      CONFIG_BT_NIMBLE_MAX_CONNECTIONS: "1"
+      CONFIG_BT_NIMBLE_MAX_BONDS: "0"
+      CONFIG_BT_NIMBLE_MAX_CCCDS: "2"
+      CONFIG_BT_NIMBLE_L2CAP_COC_MAX_NUM: "0"
+      CONFIG_BT_NIMBLE_MESH: "n"
+      CONFIG_BT_NIMBLE_CRYPTO_STACK_MBEDTLS: "y"
+      CONFIG_BT_NIMBLE_HOST_TASK_STACK_SIZE: "4096"
+      CONFIG_MBEDTLS_HARDWARE_AES: "y"
+      CONFIG_MBEDTLS_HARDWARE_SHA: "y"
+      CONFIG_MBEDTLS_AES_C: "y"
+      CONFIG_MBEDTLS_ECB_C: "y"
+      CONFIG_MBEDTLS_SHA1_C: "y"
+      CONFIG_MBEDTLS_MD_C: "y"
+      CONFIG_MBEDTLS_MD5_C: "n"
+      CONFIG_ESP_MAIN_TASK_STACK_SIZE: "4096"
+      CONFIG_FREERTOS_IDLE_TASK_STACK_SIZE: "1536"
+      CONFIG_ESP_SYSTEM_EVENT_TASK_STACK_SIZE: "2304"
+      CONFIG_ESP_WIFI_STATIC_RX_BUFFER_NUM: "8"
+      CONFIG_ESP_WIFI_DYNAMIC_RX_BUFFER_NUM: "16"
+      CONFIG_LOG_DEFAULT_LEVEL_INFO: "y"
+      CONFIG_BOOTLOADER_LOG_LEVEL_NONE: "y"
 
 external_components:
   - source:
       type: local
-      path: components
-
-bluetooth_proxy:
-
-esp32_ble:
-
-esp32_ble_tracker:
-  scan_parameters:
-    active: true
-    continuous: true
-
-airbnk_gateway:
-  id: airbnk_component
-  mac_address: "${lock_mac}"
-  topic_prefix: "${mqtt_topic_prefix}"
-  manufacturer_key: ""
-  binding_key: ""
-
-logger:
-  level: INFO
+      path: custom_components
+    components: [airbnk_ble]
 
 mqtt:
   broker: 192.168.6.11
-  username: mqttuser
-  password: !secret mqttpassword
+  port: 1883
+  username: !secret mqtt_username
+  password: !secret mqtt_password
   discovery: false
-  topic_prefix: ${mqtt_topic_prefix}
-  log_topic: null
   birth_message:
-    topic: ${mqtt_topic_prefix}/LWT
-    payload: Online
+    topic: airbnk/${device_id}/availability
+    payload: "online"
   will_message:
-    topic: ${mqtt_topic_prefix}/LWT
-    payload: Offline
+    topic: airbnk/${device_id}/availability
+    payload: "offline"
+
+airbnk_ble:
+  id: front_door
+  mac_address: !secret airbnk_mac
+  manufacturer_key: !secret airbnk_mfg_key
+  binding_key: !secret airbnk_bind_key
+  device_id: ${device_id}
+  battery_v1: 3.5
+  battery_v2: 3.8
+  battery_v3: 4.1
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  ap:
+    ssid: "${friendly_name} Fallback"
+    password: !secret fallback_password
 
 api:
   encryption:
-    key: "N+eLUSJpfJMtxYDjs9KXt7A8de2O0Y8L2ug2S8g7jls="
-  on_client_connected:
-    - esp32_ble_tracker.start_scan:
-        continuous: true
-  on_client_disconnected:
-    - esp32_ble_tracker.stop_scan
+    key: !secret api_encryption_key
 
 ota:
   - platform: esphome
-    password: "3d7037b0d5b76ffd247c8043ce4dce8a"
+    password: !secret ota_password
 
-wifi:
-  networks:
-  - ssid: !secret wifi_ssid
-    password: !secret wifi_password
-    priority: 1
-  - ssid: 5G24
-    password: !secret wifi_password
-    priority: 0
-  manual_ip:
-    static_ip: ${device_ip}
-    gateway: 192.168.6.4
-    subnet: 255.255.254.0
-  power_save_mode: none
+web_server:
+  port: 80
 
-switch:
-  - platform: restart
-    name: "${devicename} Restart"
+captive_portal:
+
+logger:
+  level: INFO

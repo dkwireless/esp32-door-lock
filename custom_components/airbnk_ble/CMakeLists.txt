@@ -1,0 +1,16 @@
+idf_component_register(
+  SRCS
+    airbnk_ble.cpp
+    airbnk_crypto.cpp
+    airbnk_parser.cpp
+    airbnk_lock.cpp
+  INCLUDE_DIRS
+    "."
+    "sensor"
+  REQUIRES
+    bt
+    mbedtls
+    json
+    nvs_flash
+    esp_event
+)

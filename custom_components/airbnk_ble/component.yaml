@@ -1,0 +1,15 @@
+name: airbnk_ble
+description: Airbnk BLE lock integration via ESP-IDF NimBLE (no Arduino)
+version: 2.0.0
+files:
+  - airbnk_ble.h
+  - airbnk_ble.cpp
+  - airbnk_crypto.h
+  - airbnk_crypto.cpp
+  - airbnk_parser.h
+  - airbnk_parser.cpp
+  - airbnk_lock.h
+  - airbnk_lock.cpp
+dependencies:
+  # NO esp32_ble_tracker — we use our own NimBLE stack!
+  # NO ble_client — GATT client is in airbnk_lock.cpp

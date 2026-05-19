@@ -1,4 +1,5 @@
 name: ESPHome Compile Check
+
 on:
   push:
     branches:
@@ -9,18 +10,41 @@ jobs:
   esphome-compile:
     runs-on: ubuntu-latest
     container:
-      image: esphome/esphome:latest
+      image: esphome/esphome:2026.4.5
     steps:
       - uses: actions/checkout@v4
-      - name: Create secrets.yaml
+
+      - name: Verify ESPHome version
+        run: esphome version
+
+      - name: Restore build cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.esphome/
+          key: esphome-build-${{ hashFiles('esp32-door-lock.yaml', 'custom_components/**') }}
+          restore-keys: |
+            esphome-build-
+
+      - name: Generate secrets.yaml
         run: |
-          echo 'wifi_ssid: "test"' > secrets.yaml
-          echo 'wifi_password: "test"' >> secrets.yaml
-          echo 'fallback_password: "test"' >> secrets.yaml
-          echo 'mqttpassword: "test"' >> secrets.yaml
-          echo 'api_encryption_key: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="' >> secrets.yaml
-          echo 'ota_password: "test"' >> secrets.yaml
+          cat > secrets.yaml << 'SECRETS'
+          wifi_ssid: "CI_Test"
+          wifi_password: "CI_Test"
+          fallback_password: "CI_Test"
+
+          api_encryption_key: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+          ota_password: "CI_Test"
+
+          mqtt_username: "CI_Test"
+          mqtt_password: "CI_Test"
+
+          airbnk_mac: "58:93:D8:42:4E:3A"
+          airbnk_mfg_key: "AAAAAAAAAAAAAAAAAAAAAA=="
+          airbnk_bind_key: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+          SECRETS
+
       - name: Validate ESPHome config
         run: esphome config esp32-door-lock.yaml
+
       - name: Compile firmware
         run: esphome compile esp32-door-lock.yaml
