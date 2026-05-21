@@ -64,8 +64,8 @@ logger:
 mqtt:
   broker: 192.168.6.11
   port: 1883
-  username: !secret mqtt_username
-  password: !secret mqtt_password
+  username: !secret mqttuser
+  password: !secret mqttpassword
   discovery: false
   birth_message:
     topic: airbnk/${device_id}/availability
