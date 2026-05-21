@@ -1,4 +1,3 @@
-# Airbnk Gateway ESPHome external component - ESP-IDF framework
 idf_component_register(
     SRCS "airbnk_gateway.cpp"
     INCLUDE_DIRS "."
