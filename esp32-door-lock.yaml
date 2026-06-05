@@ -1,13 +1,23 @@
 # ESPHome — Airbnk BLE-MQTT Bridge
-# ESP32-C3, ESP-IDF NimBLE, esphome 2026.4+
-#
-# Pure MQTT bridge: all state → airbnk/{device_id}/state (JSON)
-# Commands → airbnk/{device_id}/command: {"action":"unlock"|"lock"}
+# ESP32-C3, ESP-IDF NimBLE, esphome 2026.6+
+# Pure MQTT bridge: se skenira lock, objavljuje advertisement na MQTT,
+# i kada stigne komanda, spaja se na lock preko BLE GATT, upisuje komandu, cita status.
 
 substitutions:
+  # --- Device info ---
   name: "esp32-door-lock"
   friendly_name: "ESP32 Door Lock Bridge"
   device_id: "aaa5a38"
+
+  # --- Airbnk lock MAC (obavezno promeniti!) ---
+  lock_mac: "E4:E1:12:C7:5C:52"
+
+  # --- MQTT topic prefix ---
+  mqtt_topic_prefix: "airbnk/${device_id}"
+
+  # --- MQTT broker ---
+  mqtt_broker: "192.168.6.11"
+  mqtt_port: "1883"
 
 esphome:
   name: ${name}
@@ -62,16 +72,16 @@ logger:
   level: INFO
 
 mqtt:
-  broker: 192.168.6.11
-  port: 1883
+  broker: ${mqtt_broker}
+  port: ${mqtt_port}
   username: !secret mqttuser
   password: !secret mqttpassword
   discovery: false
   birth_message:
-    topic: airbnk/${device_id}/availability
+    topic: ${mqtt_topic_prefix}/availability
     payload: "online"
   will_message:
-    topic: airbnk/${device_id}/availability
+    topic: ${mqtt_topic_prefix}/availability
     payload: "offline"
 
 wifi:
@@ -79,7 +89,7 @@ wifi:
   password: !secret wifi_password
   ap:
     ssid: "${friendly_name} Fallback"
-    password: !secret fallback_password
+    password: !secret wifi_password
 
 api:
   encryption:

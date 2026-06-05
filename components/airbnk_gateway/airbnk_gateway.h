@@ -79,6 +79,7 @@ protected:
     void publish_advertisement(const std::string &mac, int rssi,
                                const std::string &data);
     void publish_command_result(bool success, const std::string &error,
+                                int sign,
                                 const std::string &lock_status);
     void on_mqtt_command(const std::string &topic, const std::string &payload);
 
@@ -118,7 +119,8 @@ protected:
 
     /* Send pre-computed command (the core of the pass-through) */
     void send_custom_command(const std::vector<uint8_t> &cmd1,
-                             const std::vector<uint8_t> &cmd2);
+                             const std::vector<uint8_t> &cmd2,
+                             int sign);
 
     /* Helpers */
     static std::vector<uint8_t> hex_to_bytes(const std::string &hex);
@@ -152,6 +154,7 @@ protected:
     SemaphoreHandle_t sync_sem_{nullptr};
 
     /* Pending command data */
+    int pending_sign_{0};
     std::vector<uint8_t> pending_cmd1_;
     std::vector<uint8_t> pending_cmd2_;
 

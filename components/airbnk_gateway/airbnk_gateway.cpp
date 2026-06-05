@@ -104,15 +104,17 @@ void AirbnkGateway::publish_advertisement(const std::string &mac,
 
 void AirbnkGateway::publish_command_result(bool success,
                                            const std::string &error,
+                                           int sign,
                                            const std::string &lock_status) {
     auto *mqtt = mqtt::global_mqtt_client;
     if (!mqtt) return;
 
     mqtt->publish_json(
         command_result_topic_,
-        [this, success, &error, &lock_status](JsonObject root) {
+        [this, success, &error, sign, &lock_status](JsonObject root) {
             root["success"]    = success;
             root["error"]      = error;
+            root["sign"]       = sign;
             root["mac"]        = mac_address_;
             root["lockStatus"] = lock_status;
         },
@@ -140,22 +142,23 @@ void AirbnkGateway::on_mqtt_command(const std::string &topic,
 
     if (!cmd1_str || !cmd2_str) {
         ESP_LOGW(TAG, "Command JSON missing command1/command2 fields");
-        publish_command_result(false, "MISSING_COMMAND_FIELDS", "");
+        publish_command_result(false, "MISSING_COMMAND_FIELDS", 0, "");
         return;
     }
 
-    ESP_LOGI(TAG, "Received command: cmd1=%s, cmd2=%s", cmd1_str, cmd2_str);
+    int sign = doc["sign"] | 0;
+    ESP_LOGI(TAG, "Received command: sign=%d, cmd1=%s, cmd2=%s", sign, cmd1_str, cmd2_str);
 
     std::vector<uint8_t> cmd1 = hex_to_bytes(cmd1_str);
     std::vector<uint8_t> cmd2 = hex_to_bytes(cmd2_str);
 
     if (cmd1.empty() || cmd2.empty()) {
         ESP_LOGW(TAG, "Empty command data after hex parsing");
-        publish_command_result(false, "EMPTY_COMMAND_DATA", "");
+        publish_command_result(false, "EMPTY_COMMAND_DATA", sign, "");
         return;
     }
 
-    send_custom_command(cmd1, cmd2);
+    send_custom_command(cmd1, cmd2, sign);
 }
 
 /* ================================================================== */
@@ -189,13 +192,6 @@ void AirbnkGateway::init_nimble() {
         return;
     }
 
-    ret = esp_nimble_hci_and_controller_init();
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "esp_nimble_hci_and_controller_init failed: %d", ret);
-        this->mark_failed();
-        return;
-    }
-
     int rc;
     rc = nimble_port_init();
     if (rc != 0) {
@@ -205,7 +201,6 @@ void AirbnkGateway::init_nimble() {
     }
 
     ble_svc_gap_init();
-    ble_svc_gatt_init();
 
     rc = ble_svc_gap_device_name_set("AirbnkGateway");
     if (rc != 0) {
@@ -567,7 +562,7 @@ void AirbnkGateway::write_to_lock(const std::vector<uint8_t> &data) {
     if (rc != 0) {
         ESP_LOGE(TAG, "ble_gattc_write_flat failed: %d", rc);
         state_ = BleState::ERROR;
-        publish_command_result(false, "WRITE_FAILED", "");
+        publish_command_result(false, "WRITE_FAILED", 0, "");
         if (sync_sem_) xSemaphoreGive(sync_sem_);
     }
 }
@@ -598,7 +593,7 @@ int AirbnkGateway::gatt_write_cb(uint16_t conn_handle,
 
     ESP_LOGE(TAG, "Write error: %d", error->status);
     self->state_ = BleState::ERROR;
-    self->publish_command_result(false, "WRITE_GATT_ERROR", "");
+    self->publish_command_result(false, "WRITE_GATT_ERROR", self->pending_sign_, "");
     if (self->sync_sem_) xSemaphoreGive(self->sync_sem_);
     return 0;
 }
@@ -611,7 +606,7 @@ void AirbnkGateway::read_from_lock() {
     if (rc != 0) {
         ESP_LOGE(TAG, "ble_gattc_read failed: %d", rc);
         /* Read failure is not fatal - still report success for the command */
-        publish_command_result(true, "OK_NO_STATUS", "");
+        publish_command_result(true, "OK_NO_STATUS", 0, "");
         is_sending_ = false;
         ble_gap_terminate(conn_handle_, BLE_ERR_REM_USER_CONN_TERM);
         if (sync_sem_) xSemaphoreGive(sync_sem_);
@@ -630,10 +625,10 @@ int AirbnkGateway::gatt_read_cb(uint16_t conn_handle,
                                                attr->om->om_len);
         ESP_LOGI(TAG, "Read status: %s (%d bytes)",
                  status_hex.c_str(), attr->om->om_len);
-        self->publish_command_result(true, "", status_hex);
+        self->publish_command_result(true, "", self->pending_sign_, status_hex);
     } else {
         ESP_LOGW(TAG, "Read error: %d - reporting OK anyway", error->status);
-        self->publish_command_result(true, "OK_NO_STATUS", "");
+        self->publish_command_result(true, "OK_NO_STATUS", self->pending_sign_, "");
     }
 
     self->is_sending_ = false;
@@ -651,15 +646,17 @@ int AirbnkGateway::gatt_read_cb(uint16_t conn_handle,
 /* ================================================================== */
 
 void AirbnkGateway::send_custom_command(const std::vector<uint8_t> &cmd1,
-                                         const std::vector<uint8_t> &cmd2) {
+                                         const std::vector<uint8_t> &cmd2,
+                                         int sign) {
     if (is_sending_) {
         ESP_LOGW(TAG, "Already sending, ignoring");
-        publish_command_result(false, "BUSY", "");
+        publish_command_result(false, "BUSY", 0, "");
         return;
     }
 
     is_sending_ = true;
     send_retries_ = 0;
+    pending_sign_ = sign;
     pending_cmd1_ = cmd1;
     pending_cmd2_ = cmd2;
 
