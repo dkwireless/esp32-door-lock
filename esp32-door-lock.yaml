@@ -1,7 +1,7 @@
 # ESPHome — Airbnk BLE-MQTT Bridge
 # ESP32-C3, ESP-IDF NimBLE, esphome 2026.6+
-# Pure MQTT bridge: skenira lock, objavljuje advertisement na MQTT,
-# kad stigne komanda, spaja se na lock preko BLE GATT i cita status.
+# Pure MQTT bridge: lock scan, advertisement to MQTT,
+# command push.
 
 substitutions:
   # --- Device info ---
@@ -9,8 +9,8 @@ substitutions:
   friendly_name: "ESP32 Door Lock Bridge"
   device_id: "aaa5a38"
 
-  # --- Airbnk lock MAC (obavezno promeniti!) ---
-  lock_mac: "E4:E1:12:C7:5C:52"
+  # --- Airbnk lock MAC (put your MAC!) ---
+  lock_mac: "E4:E1:12:C6:53:55"
 
   # --- MQTT topic prefix ---
   mqtt_topic_prefix: "airbnk/${device_id}"
@@ -32,6 +32,7 @@ esphome:
       -I/home/dragan/.platformio/packages/framework-espidf/components/bt/host/nimble/nimble/nimble/host/util/include
 
 esp32:
+# --- change to your esp32 device model
   board: esp32-c3-devkitm-1
   framework:
     type: esp-idf
@@ -83,7 +84,7 @@ ota:
   - platform: esphome
     password: !secret ota_password
 
-web_server:
-  port: 80
+#web_server:
+#  port: 80
 
 captive_portal:
