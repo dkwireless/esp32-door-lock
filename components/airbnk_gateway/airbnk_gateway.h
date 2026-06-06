@@ -12,13 +12,18 @@
 #include "freertos/task.h"
 #include "freertos/semphr.h"
 
-/* Forward declarations for NimBLE types (included in .cpp only) */
-struct ble_gap_event;
-struct ble_gatt_error;
-struct ble_gatt_svc;
-struct ble_gatt_chr;
-struct ble_gatt_attr;
-struct ble_addr_t;
+/* NimBLE host headers — available via build_flags in YAML */
+extern "C" {
+#include "esp_bt.h"
+#include "esp_nimble_hci.h"
+#include "nimble/nimble_port.h"
+#include "nimble/nimble_port_freertos.h"
+#include "host/ble_hs.h"
+#include "host/ble_gap.h"
+#include "host/ble_gatt.h"
+#include "host/util/util.h"
+#include "services/gap/ble_svc_gap.h"
+}
 
 namespace esphome {
 namespace airbnk_gateway {
@@ -136,7 +141,7 @@ protected:
     /* BLE state */
     BleState state_{BleState::IDLE};
     uint8_t lock_addr_[6]{};
-    uint8_t lock_addr_type_{0};  // BLE_OWN_ADDR_PUBLIC = 0
+    uint8_t lock_addr_type_{0};
     uint16_t conn_handle_{0};
     uint16_t svc_start_handle_{0};
     uint16_t svc_end_handle_{0};
