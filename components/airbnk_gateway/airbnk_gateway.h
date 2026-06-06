@@ -12,18 +12,12 @@
 #include "freertos/task.h"
 #include "freertos/semphr.h"
 
-/* NimBLE host headers — available via build_flags in YAML */
-extern "C" {
-#include "esp_bt.h"
-#include "esp_nimble_hci.h"
-#include "nimble/nimble_port.h"
-#include "nimble/nimble_port_freertos.h"
-#include "host/ble_hs.h"
-#include "host/ble_gap.h"
-#include "host/ble_gatt.h"
-#include "host/util/util.h"
-#include "services/gap/ble_svc_gap.h"
-}
+/* Forward declarations for NimBLE types (headers included in .cpp only) */
+struct ble_gap_event;
+struct ble_gatt_error;
+struct ble_gatt_svc;
+struct ble_gatt_chr;
+struct ble_gatt_attr;
 
 namespace esphome {
 namespace airbnk_gateway {
