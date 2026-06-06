@@ -7,6 +7,19 @@
 #include <algorithm>
 #include <cstdio>
 
+/* NimBLE host headers (ESP-IDF native) */
+extern "C" {
+#include "esp_bt.h"
+#include "esp_nimble_hci.h"
+#include "nimble/nimble_port.h"
+#include "nimble/nimble_port_freertos.h"
+#include "host/ble_hs.h"
+#include "host/ble_gap.h"
+#include "host/ble_gatt.h"
+#include "host/util/util.h"
+#include "services/gap/ble_svc_gap.h"
+}
+
 namespace esphome {
 namespace airbnk_gateway {
 
@@ -240,9 +253,9 @@ void AirbnkGateway::start_scanning() {
 
     for (size_t i = 0; i < 6; i++) {
         std::string byte_str = mac.substr(i * 2, 2);
-        lock_addr_.val[5 - i] = strtol(byte_str.c_str(), nullptr, 16);
+        lock_addr_[5 - i] = strtol(byte_str.c_str(), nullptr, 16);
     }
-    lock_addr_.type = BLE_OWN_ADDR_PUBLIC;
+    lock_addr_type_ = BLE_OWN_ADDR_PUBLIC;
 
     struct ble_gap_disc_params disc_params;
     memset(&disc_params, 0, sizeof(disc_params));
@@ -294,7 +307,7 @@ int AirbnkGateway::handle_gap_event(struct ble_gap_event *event) {
         const auto &disc = event->disc;
 
         /* Check if this is our lock */
-        if (memcmp(disc.addr.val, lock_addr_.val, 6) != 0) {
+        if (memcmp(disc.addr.val, lock_addr_, 6) != 0) {
             return 0;
         }
 
@@ -333,7 +346,7 @@ int AirbnkGateway::handle_gap_event(struct ble_gap_event *event) {
         /* We need to connect - stop scanning first */
         stop_scanning();
         lock_addr_ = disc.addr;
-        connect_to_lock(lock_addr_);
+        connect_to_lock(lock_addr_, lock_addr_type_);
         return 0;
     }
 
@@ -408,9 +421,13 @@ int AirbnkGateway::handle_gap_event(struct ble_gap_event *event) {
 /*  BLE - Connection                                                   */
 /* ================================================================== */
 
-void AirbnkGateway::connect_to_lock(const ble_addr_t &addr) {
+void AirbnkGateway::connect_to_lock(const uint8_t *addr, uint8_t addr_type) {
     ESP_LOGI(TAG, "Connecting to lock...");
     state_ = BleState::CONNECTING;
+
+    ble_addr_t ble_addr;
+    memcpy(ble_addr.val, addr, 6);
+    ble_addr.type = addr_type;
 
     struct ble_gap_conn_params conn_params;
     memset(&conn_params, 0, sizeof(conn_params));
@@ -423,7 +440,7 @@ void AirbnkGateway::connect_to_lock(const ble_addr_t &addr) {
     conn_params.min_ce_len           = 16;
     conn_params.max_ce_len           = 32;
 
-    int rc = ble_gap_connect(BLE_OWN_ADDR_PUBLIC, &addr,
+    int rc = ble_gap_connect(BLE_OWN_ADDR_PUBLIC, &ble_addr,
                              AIRBNK_CONNECT_TIMEOUT_MS,
                              &conn_params,
                              gap_event_cb,
@@ -663,7 +680,7 @@ void AirbnkGateway::send_custom_command(const std::vector<uint8_t> &cmd1,
     if (lock_found_) {
         /* Lock address already known, connect directly */
         stop_scanning();
-        connect_to_lock(lock_addr_);
+        connect_to_lock(lock_addr_, lock_addr_type_);
     } else {
         /* Scan will find the lock and connect via BLE_GAP_EVENT_DISC */
         ESP_LOGI(TAG, "Waiting for lock advertisement to connect...");

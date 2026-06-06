@@ -12,17 +12,13 @@
 #include "freertos/task.h"
 #include "freertos/semphr.h"
 
-/* NimBLE host headers (ESP-IDF native, NOT NimBLEDevice Arduino wrapper) */
-#include "nimble/nimble_port.h"
-#include "nimble/nimble_port_freertos.h"
-#include "host/ble_hs.h"
-#include "host/ble_gap.h"
-#include "host/ble_gatt.h"
-#include "host/util/util.h"
-#include "services/gap/ble_svc_gap.h"
-
-#include "esp_bt.h"
-#include "esp_nimble_hci.h"
+/* Forward declarations for NimBLE types (included in .cpp only) */
+struct ble_gap_event;
+struct ble_gatt_error;
+struct ble_gatt_svc;
+struct ble_gatt_chr;
+struct ble_gatt_attr;
+struct ble_addr_t;
 
 namespace esphome {
 namespace airbnk_gateway {
@@ -111,7 +107,7 @@ protected:
                             void *arg);
 
     /* Connection operations */
-    void connect_to_lock(const ble_addr_t &addr);
+    void connect_to_lock(const uint8_t *addr, uint8_t addr_type);
     void discover_services(uint16_t conn_handle);
     void discover_characteristics(uint16_t conn_handle);
     void write_to_lock(const std::vector<uint8_t> &data);
@@ -139,7 +135,8 @@ protected:
 
     /* BLE state */
     BleState state_{BleState::IDLE};
-    ble_addr_t lock_addr_{};
+    uint8_t lock_addr_[6]{};
+    uint8_t lock_addr_type_{0};  // BLE_OWN_ADDR_PUBLIC = 0
     uint16_t conn_handle_{0};
     uint16_t svc_start_handle_{0};
     uint16_t svc_end_handle_{0};
