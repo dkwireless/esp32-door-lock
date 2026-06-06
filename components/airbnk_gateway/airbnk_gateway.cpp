@@ -1,5 +1,6 @@
 #include "airbnk_gateway.h"
 #include "esphome/core/log.h"
+#include "esphome/components/network/util.h"
 
 #include <ArduinoJson.h>
 
@@ -62,17 +63,29 @@ void AirbnkGateway::setup() {
     /* Subscribe to MQTT command topic */
     subscribe_mqtt();
 
-    /* Initialise NimBLE */
-    init_nimble();
+    /* Defer NimBLE + BLE scan to loop() — WiFi must be up first */
+    ble_init_scheduled_ = true;
 
-    /* Start BLE scanning */
-    start_scanning();
-
-    ESP_LOGI(TAG, "AirbnkGateway setup complete");
+    ESP_LOGI(TAG, "AirbnkGateway setup complete (BLE deferred)");
 }
 
 void AirbnkGateway::loop() {
-    /* NimBLE runs in its own task; nothing periodic needed. */
+    /* Deferred BLE init: wait for WiFi before touching BT controller */
+    if (ble_init_scheduled_ && !ble_init_done_) {
+        if (network::is_connected()) {
+            ESP_LOGI(TAG, "WiFi connected, initializing NimBLE now");
+            init_nimble();
+            if (ble_init_done_) {
+                start_scanning();
+            }
+        } else {
+            static uint32_t last_warn = 0;
+            if (millis() - last_warn > 10000) {
+                ESP_LOGD(TAG, "Waiting for WiFi before BLE init...");
+                last_warn = millis();
+            }
+        }
+    }
 }
 
 float AirbnkGateway::get_setup_priority() const {
@@ -275,8 +288,8 @@ void AirbnkGateway::start_scanning() {
         state_ = BleState::SCANNING;
         ESP_LOGI(TAG, "BLE scan started");
     } else {
-        ESP_LOGE(TAG, "ble_gap_disc failed: %d", rc);
-        state_ = BleState::ERROR;
+        ESP_LOGW(TAG, "ble_gap_disc failed: %d (will retry)", rc);
+        state_ = BleState::IDLE;
     }
 }
 

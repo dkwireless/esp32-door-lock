@@ -145,6 +145,7 @@ protected:
     bool is_sending_{false};
     uint8_t send_retries_{0};
     bool ble_init_done_{false};
+    bool ble_init_scheduled_{false};
 
     /* Synchronisation semaphore for BLE operations */
     SemaphoreHandle_t sync_sem_{nullptr};
