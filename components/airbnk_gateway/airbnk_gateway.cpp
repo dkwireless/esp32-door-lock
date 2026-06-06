@@ -345,7 +345,8 @@ int AirbnkGateway::handle_gap_event(struct ble_gap_event *event) {
 
         /* We need to connect - stop scanning first */
         stop_scanning();
-        lock_addr_ = disc.addr;
+        memcpy(lock_addr_, disc.addr.val, 6);
+        lock_addr_type_ = disc.addr.type;
         connect_to_lock(lock_addr_, lock_addr_type_);
         return 0;
     }
