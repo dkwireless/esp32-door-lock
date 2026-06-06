@@ -24,12 +24,12 @@ esphome:
   friendly_name: ${friendly_name}
   platformio_options:
     build_flags: >
-      -I/home/dragan/.platformio/packages/framework-espidf/components/bt/include/esp32c3/include
-      -I/home/dragan/.platformio/packages/framework-espidf/components/bt/host/nimble/nimble/porting/nimble/include
-      -I/home/dragan/.platformio/packages/framework-espidf/components/bt/host/nimble/nimble/nimble/host/include
-      -I/home/dragan/.platformio/packages/framework-espidf/components/bt/host/nimble/esp-hci/include
-      -I/home/dragan/.platformio/packages/framework-espidf/components/bt/host/nimble/nimble/nimble/host/services/gap/include
-      -I/home/dragan/.platformio/packages/framework-espidf/components/bt/host/nimble/nimble/nimble/host/util/include
+      -I~/framework-espidf/components/bt/include/esp32c3/include
+      -I~/framework-espidf/components/bt/host/nimble/nimble/porting/nimble/include
+      -I~/framework-espidf/components/bt/host/nimble/nimble/nimble/host/include
+      -I~/framework-espidf/components/bt/host/nimble/esp-hci/include
+      -I~/framework-espidf/components/bt/host/nimble/nimble/nimble/host/services/gap/include
+      -I~/framework-espidf/components/bt/host/nimble/nimble/nimble/host/util/include
 
 esp32:
 # --- change to your esp32 device model
