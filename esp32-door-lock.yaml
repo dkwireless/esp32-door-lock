@@ -18,18 +18,18 @@ substitutions:
   # --- MQTT broker ---
   mqtt_broker: "192.168.6.11"
   mqtt_port: "1883"
-  framework_pkg: "/home/dragan/.platformio/packages/framework-espidf"
 
 esphome:
   name: ${name}
   friendly_name: ${friendly_name}
-  build_flags:
-    - "-I${framework_pkg}/components/bt/include/esp32c3/include"
-    - "-I${framework_pkg}/components/bt/host/nimble/nimble/porting/nimble/include"
-    - "-I${framework_pkg}/components/bt/host/nimble/nimble/nimble/host/include"
-    - "-I${framework_pkg}/components/bt/host/nimble/esp-hci/include"
-    - "-I${framework_pkg}/components/bt/host/nimble/nimble/nimble/host/services/gap/include"
-    - "-I${framework_pkg}/components/bt/host/nimble/nimble/nimble/host/util/include"
+  platformio_options:
+    build_flags: >
+      -I/home/dragan/.platformio/packages/framework-espidf/components/bt/include/esp32c3/include
+      -I/home/dragan/.platformio/packages/framework-espidf/components/bt/host/nimble/nimble/porting/nimble/include
+      -I/home/dragan/.platformio/packages/framework-espidf/components/bt/host/nimble/nimble/nimble/host/include
+      -I/home/dragan/.platformio/packages/framework-espidf/components/bt/host/nimble/esp-hci/include
+      -I/home/dragan/.platformio/packages/framework-espidf/components/bt/host/nimble/nimble/nimble/host/services/gap/include
+      -I/home/dragan/.platformio/packages/framework-espidf/components/bt/host/nimble/nimble/nimble/host/util/include
 
 esp32:
   board: esp32-c3-devkitm-1
