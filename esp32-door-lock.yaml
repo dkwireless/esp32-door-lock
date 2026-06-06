@@ -25,6 +25,23 @@ esphome:
   platformio_options:
     board_build.flash_mode: dio
     board_build.f_cpu: "160000000L"
+    build_flags:
+      # BT controller (esp_bt.h)
+      - "-I/home/dragan/.platformio/packages/framework-espidf/components/bt/include/esp32c3/include"
+      # NimBLE porting layer (nimble_port.h)
+      - "-I/home/dragan/.platformio/packages/framework-espidf/components/bt/host/nimble/nimble/porting/nimble/include"
+      # NimBLE host (ble_hs.h, ble_gap.h, ble_gatt.h)
+      - "-I/home/dragan/.platformio/packages/framework-espidf/components/bt/host/nimble/nimble/nimble/host/include"
+      # NimBLE HCI (esp_nimble_hci.h)
+      - "-I/home/dragan/.platformio/packages/framework-espidf/components/bt/host/nimble/esp-hci/include"
+      # NimBLE GAP service (ble_svc_gap.h)
+      - "-I/home/dragan/.platformio/packages/framework-espidf/components/bt/host/nimble/nimble/nimble/host/services/gap/include"
+      # NimBLE util (util.h)
+      - "-I/home/dragan/.platformio/packages/framework-espidf/components/bt/host/nimble/nimble/nimble/host/util/include"
+      # FreeRTOS (from ESP-IDF)
+      - "-I/home/dragan/.platformio/packages/framework-espidf/components/freertos/FreeRTOS-Kernel/include"
+      - "-I/home/dragan/.platformio/packages/framework-espidf/components/freertos/esp_additions/include/freertos"
+
 
 esp32:
   board: esp32-c3-devkitm-1
