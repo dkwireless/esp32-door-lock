@@ -202,24 +202,8 @@ void AirbnkGateway::init_nimble() {
 
     ESP_LOGI(TAG, "Initialising NimBLE host");
 
-    /* Initialize BLE controller */
-    esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
-    esp_err_t ret = esp_bt_controller_init(&bt_cfg);
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "esp_bt_controller_init failed: %d", ret);
-        this->mark_failed();
-        return;
-    }
-
-    ret = esp_bt_controller_enable(ESP_BT_MODE_BLE);
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "esp_bt_controller_enable failed: %d", ret);
-        this->mark_failed();
-        return;
-    }
-
-    int rc;
-    rc = nimble_port_init();
+    /* nimble_port_init() handles BT controller + HCI + host internally */
+    int rc = nimble_port_init();
     if (rc != 0) {
         ESP_LOGE(TAG, "nimble_port_init failed: %d", rc);
         this->mark_failed();
