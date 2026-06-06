@@ -311,13 +311,8 @@ int AirbnkGateway::handle_gap_event(struct ble_gap_event *event) {
         /* Extract manufacturer data */
         std::string man_data;
 
-        /* Try NimBLE's pre-parsed manufacturer data first */
-        if (disc.length_mfg_data > 0 && disc.mfg_data != nullptr) {
-            man_data = bytes_to_hex(disc.mfg_data, disc.length_mfg_data);
-        }
-
-        /* Fallback: manually parse AD structures from raw data */
-        if (man_data.empty() && disc.length_data > 0 && disc.data != nullptr) {
+        /* Parse manufacturer data (AD type 0xFF) from raw advertisement */
+        if (disc.length_data > 0 && disc.data != nullptr) {
             const uint8_t *p = disc.data;
             uint8_t remain = disc.length_data;
             while (remain >= 2) {
