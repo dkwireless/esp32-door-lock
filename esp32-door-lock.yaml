@@ -1,7 +1,7 @@
 # ESPHome — Airbnk BLE-MQTT Bridge
 # ESP32-C3, ESP-IDF NimBLE, esphome 2026.6+
-# Pure MQTT bridge: se skenira lock, objavljuje advertisement na MQTT,
-# i kada stigne komanda, spaja se na lock preko BLE GATT, upisuje komandu, cita status.
+# Pure MQTT bridge: skenira lock, objavljuje advertisement na MQTT,
+# kad stigne komanda, spaja se na lock preko BLE GATT i cita status.
 
 substitutions:
   # --- Device info ---
@@ -19,29 +19,18 @@ substitutions:
   mqtt_broker: "192.168.6.11"
   mqtt_port: "1883"
 
+framework_pkg: "/home/dragan/.platformio/packages/framework-espidf"
+
 esphome:
   name: ${name}
   friendly_name: ${friendly_name}
-  platformio_options:
-    board_build.flash_mode: dio
-    board_build.f_cpu: "160000000L"
-    build_flags:
-      # BT controller (esp_bt.h)
-      - "-I/home/dragan/.platformio/packages/framework-espidf/components/bt/include/esp32c3/include"
-      # NimBLE porting layer (nimble_port.h)
-      - "-I/home/dragan/.platformio/packages/framework-espidf/components/bt/host/nimble/nimble/porting/nimble/include"
-      # NimBLE host (ble_hs.h, ble_gap.h, ble_gatt.h)
-      - "-I/home/dragan/.platformio/packages/framework-espidf/components/bt/host/nimble/nimble/nimble/host/include"
-      # NimBLE HCI (esp_nimble_hci.h)
-      - "-I/home/dragan/.platformio/packages/framework-espidf/components/bt/host/nimble/esp-hci/include"
-      # NimBLE GAP service (ble_svc_gap.h)
-      - "-I/home/dragan/.platformio/packages/framework-espidf/components/bt/host/nimble/nimble/nimble/host/services/gap/include"
-      # NimBLE util (util.h)
-      - "-I/home/dragan/.platformio/packages/framework-espidf/components/bt/host/nimble/nimble/nimble/host/util/include"
-      # FreeRTOS (from ESP-IDF)
-      - "-I/home/dragan/.platformio/packages/framework-espidf/components/freertos/FreeRTOS-Kernel/include"
-      - "-I/home/dragan/.platformio/packages/framework-espidf/components/freertos/esp_additions/include/freertos"
-
+  build_flags:
+    - "-I${framework_pkg}/components/bt/include/esp32c3/include"
+    - "-I${framework_pkg}/components/bt/host/nimble/nimble/porting/nimble/include"
+    - "-I${framework_pkg}/components/bt/host/nimble/nimble/nimble/host/include"
+    - "-I${framework_pkg}/components/bt/host/nimble/esp-hci/include"
+    - "-I${framework_pkg}/components/bt/host/nimble/nimble/nimble/host/services/gap/include"
+    - "-I${framework_pkg}/components/bt/host/nimble/nimble/nimble/host/util/include"
 
 esp32:
   board: esp32-c3-devkitm-1
@@ -53,27 +42,6 @@ esp32:
       CONFIG_BTDM_CTRL_MODE_BLE_ONLY: "y"
       CONFIG_BT_BLUEDROID_ENABLED: "n"
       CONFIG_BT_NIMBLE_ENABLED: "y"
-      CONFIG_BT_NIMBLE_MAX_CONNECTIONS: "1"
-      CONFIG_BT_NIMBLE_MAX_BONDS: "0"
-      CONFIG_BT_NIMBLE_MAX_CCCDS: "2"
-      CONFIG_BT_NIMBLE_L2CAP_COC_MAX_NUM: "0"
-      CONFIG_BT_NIMBLE_MESH: "n"
-      CONFIG_BT_NIMBLE_CRYPTO_STACK_MBEDTLS: "y"
-      CONFIG_BT_NIMBLE_HOST_TASK_STACK_SIZE: "4096"
-      CONFIG_MBEDTLS_HARDWARE_AES: "y"
-      CONFIG_MBEDTLS_HARDWARE_SHA: "y"
-      CONFIG_MBEDTLS_AES_C: "y"
-      CONFIG_MBEDTLS_ECB_C: "y"
-      CONFIG_MBEDTLS_SHA1_C: "y"
-      CONFIG_MBEDTLS_MD_C: "y"
-      CONFIG_MBEDTLS_MD5_C: "n"
-      CONFIG_ESP_MAIN_TASK_STACK_SIZE: "4096"
-      CONFIG_FREERTOS_IDLE_TASK_STACK_SIZE: "1536"
-      CONFIG_ESP_SYSTEM_EVENT_TASK_STACK_SIZE: "2304"
-      CONFIG_ESP_WIFI_STATIC_RX_BUFFER_NUM: "8"
-      CONFIG_ESP_WIFI_DYNAMIC_RX_BUFFER_NUM: "16"
-      CONFIG_LOG_DEFAULT_LEVEL_INFO: "y"
-      CONFIG_BOOTLOADER_LOG_LEVEL_NONE: "y"
 
 external_components:
   - source:
