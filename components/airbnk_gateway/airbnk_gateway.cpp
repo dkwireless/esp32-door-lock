@@ -325,9 +325,7 @@ int AirbnkGateway::handle_gap_event(struct ble_gap_event *event) {
                 if (field_len == 0) break;
 
                 if (field_type == 0xFF && remain >= field_len + 1) {
-                    if (field_len >= 4) {
-                        man_data = bytes_to_hex(p + 4, field_len - 3);
-                    }
+                    man_data = bytes_to_hex(p + 2, field_len - 1);
                     break;
                 }
                 if (field_len + 1 > remain) break;
