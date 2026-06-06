@@ -118,14 +118,13 @@ void AirbnkGateway::publish_advertisement(const std::string &mac,
     auto *mqtt = mqtt::global_mqtt_client;
     if (!mqtt) return;
 
-    mqtt->publish_json(
-        advert_topic_,
-        [&mac, rssi, &data](JsonObject root) {
-            root["mac"]  = mac;
-            root["rssi"] = rssi;
-            root["data"] = data;
-        },
-        1, false);
+    JsonDocument doc;
+    doc["mac"]  = mac;
+    doc["rssi"] = rssi;
+    doc["data"] = data;
+    std::string json_str;
+    serializeJson(doc, json_str);
+    mqtt->publish(advert_topic_, json_str, 1, false);
 }
 
 void AirbnkGateway::publish_command_result(bool success,
@@ -135,16 +134,15 @@ void AirbnkGateway::publish_command_result(bool success,
     auto *mqtt = mqtt::global_mqtt_client;
     if (!mqtt) return;
 
-    mqtt->publish_json(
-        command_result_topic_,
-        [this, success, &error, sign, &lock_status](JsonObject root) {
-            root["success"]    = success;
-            root["error"]      = error;
-            root["sign"]       = sign;
-            root["mac"]        = mac_address_;
-            root["lockStatus"] = lock_status;
-        },
-        1, false);
+    JsonDocument doc;
+    doc["success"]    = success;
+    doc["error"]      = error;
+    doc["sign"]       = sign;
+    doc["mac"]        = mac_address_;
+    doc["lockStatus"] = lock_status;
+    std::string json_str;
+    serializeJson(doc, json_str);
+    mqtt->publish(command_result_topic_, json_str, 1, false);
 }
 
 void AirbnkGateway::on_mqtt_command(const std::string &topic,
