@@ -18,8 +18,7 @@ substitutions:
   # --- MQTT broker ---
   mqtt_broker: "192.168.6.11"
   mqtt_port: "1883"
-
-framework_pkg: "/home/dragan/.platformio/packages/framework-espidf"
+  framework_pkg: "/home/dragan/.platformio/packages/framework-espidf"
 
 esphome:
   name: ${name}
