@@ -311,6 +311,10 @@ int AirbnkGateway::handle_gap_event(struct ble_gap_event *event) {
         /* Extract manufacturer data */
         std::string man_data;
 
+        /* Debug: dump raw advertisement */
+        std::string raw_hex = bytes_to_hex(disc.data, std::min<uint8_t>(disc.length_data, 64));
+        ESP_LOGD(TAG, "Raw adv: %d bytes = %s", disc.length_data, raw_hex.c_str());
+
         /* Parse manufacturer data (AD type 0xFF) from raw advertisement */
         if (disc.length_data > 0 && disc.data != nullptr) {
             const uint8_t *p = disc.data;
@@ -334,6 +338,8 @@ int AirbnkGateway::handle_gap_event(struct ble_gap_event *event) {
 
         /* Publish to MQTT */
         std::string mac_str = mac_to_string(disc.addr.val);
+        ESP_LOGD(TAG, "Adv data len=%d hex=%s", 
+                 (int)man_data.length() / 2, man_data.c_str());
         publish_advertisement(mac_str, disc.rssi, man_data);
 
         /* If not currently sending, just report */
