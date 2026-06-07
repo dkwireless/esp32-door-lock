@@ -7,6 +7,8 @@ substitutions:
   # Device info
   name: "esp32-door-lock"
   friendly_name: "ESP32 Door Lock Bridge"
+  # Used in mqtt_topic_prefix below to build the MQTT topic root.
+  # Change this if you run multiple gateways on the same MQTT broker.
   device_id: "aaa5a38"
 
   # --- Airbnk lock MAC (put your MAC!) ---
