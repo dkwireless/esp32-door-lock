@@ -87,7 +87,10 @@ in the list. Click Install.
 
 ### 5. Configure Home Assistant
 
-1. Install the custom integration via HACS or manually
+1. Install the
+   [rospogrigio/airbnk_mqtt](https://github.com/rospogrigio/airbnk_mqtt)
+   custom integration ([HACS](https://hacs.xyz) or
+   [manual install](https://github.com/rospogrigio/airbnk_mqtt#installation)).
 2. Add integration → Airbnk lock (MQTT-based)
 3. Enter your Airbnk/WeHere email + verification code
 4. For each lock, use **Custom MQTT** type with:
