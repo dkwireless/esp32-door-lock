@@ -1,108 +1,119 @@
-# ESP32 Airbnk Door Lock (BLE-to-MQTT Gateway)
+# ESP32 Airbnk Door Lock — ESPHome BLE-MQTT Gateway
 
-ESP32-C3 native ESP-IDF firmware that bridges Airbnk smart locks (BLE) to MQTT,
-designed to work with [rospogrigio/airbnk_mqtt](https://github.com/rospogrigio/airbnk_mqtt)
+ESPHome external component for ESP32-C3 that bridges Airbnk smart locks
+over BLE to MQTT. Works with the
+[rospogrigio/airbnk_mqtt](https://github.com/rospogrigio/airbnk_mqtt)
 Home Assistant integration.
 
-Based on [formatBCE/Airbnk-MQTTOpenGateway](https://github.com/formatBCE/Airbnk-MQTTOpenGateway).
+> Based on [formatBCE/Airbnk-MQTTOpenGateway](https://github.com/formatBCE/Airbnk-MQTTOpenGateway)
+> — ported from NimBLE-Arduino/CustomMQTTDevice to native ESPHome 2026.5+
+> with standalone ESP-IDF NimBLE (no Arduino.h, no ble_client).
 
-Built with **native ESP-IDF** — no Arduino.h, no NimBLE-Arduino, no ESPHome
-framework dependencies. Uses NimBLE host stack directly via ESP-IDF APIs.
+## Architecture
+
+```
+Airbnk Lock  ──BLE──>  ESP32-C3  ──MQTT──>  Home Assistant
+                          │                    (rospogrigio/
+                     ads: /adv              airbnk_mqtt)
+                     cmds: /command
+                     result: /command_result
+```
+
+The ESP32 is a **dumb passthrough** — no crypto, no key generation.
+It forwards BLE advertisements to MQTT and relays lock/unlock commands
+from HA to the lock via BLE GATT.
 
 ## Hardware
 
-- ESP32-C3 (esp32-c3-devkitc-02)
-- Airbnk lock (M300, M500, M510, M530, M531)
+- ESP32-C3 board (esp32-c3-devkitm-1 or similar)
+- Airbnk smart lock (M300, M500, M510, M530, M531)
 
-## Network
+## Prerequisites
 
-- Static IP: 192.168.7.50
-- Gateway: 192.168.6.4
-- MQTT broker: 192.168.6.11
+- ESPHome 2026.5+ (`pip install esphome`)
+- MQTT broker (Mosquitto or similar)
+- HA custom integration:
+  [rospogrigio/airbnk_mqtt](https://github.com/rospogrigio/airbnk_mqtt)
+
+## Quick Start
+
+### 1. Clone & configure
+
+```bash
+git clone https://github.com/dkwireless/esp32-door-lock.git
+cd esp32-door-lock
+```
+
+### 2. Set up secrets
+
+```bash
+cp secrets.yaml.example secrets.yaml
+nano secrets.yaml
+```
+
+Add your WiFi credentials, MQTT credentials, and OTA password.
+
+### 3. Configure the lock MAC
+
+Edit `esp32-door-lock.yaml` and change `lock_mac` to your lock's
+BLE MAC address.
+
+```yaml
+substitutions:
+  lock_mac: "E4:E1:12:C7:5C:52"   # ← change this
+```
+
+### 4. Compile & flash
+
+```bash
+esphome compile esp32-door-lock.yaml
+esphome upload esp32-door-lock.yaml
+```
+
+### 5. Configure Home Assistant
+
+1. Install the custom integration via HACS or manually
+2. Add integration → Airbnk lock (MQTT-based)
+3. Enter your Airbnk/WeHere email + verification code
+4. For each lock, use **Custom MQTT** type with:
+   - **MQTT Topic:** `airbnk/{device_id}` (e.g. `airbnk/aaa5a38`)
+   - **MAC Address:** your lock's MAC
 
 ## MQTT Topics
 
-| Topic | Direction | Purpose |
+| Topic | Direction | Payload |
 |---|---|---|
-| `tele/maindoor/adv` | ESP32 -> MQTT | Lock BLE advertisement data (MAC, RSSI, manufacturer data) |
-| `tele/maindoor/command` | MQTT -> ESP32 | Lock/unlock commands from HA |
-| `tele/maindoor/command_result` | ESP32 -> MQTT | Command execution result |
-| `tele/maindoor/LWT` | ESP32 -> MQTT | Last Will and Testament (Online/Offline) |
+| `{prefix}/adv` | ESP32 → MQTT | `{"mac":"...","rssi":-80,"data":"BABA..."}` |
+| `{prefix}/command` | MQTT → ESP32 | `{"sign":N,"command1":"...","command2":"..."}` |
+| `{prefix}/command_result` | ESP32 → MQTT | `{"success":true,"sign":N,"lockStatus":"..."}` |
+| `{prefix}/availability` | ESP32 → MQTT | `online` / `offline` |
 
-## File Structure
+## Project Structure
 
 ```
-├── CMakeLists.txt                 # Root ESP-IDF project
-├── sdkconfig.defaults             # ESP-IDF config defaults
-├── main/
-│   ├── CMakeLists.txt             # Main component
-│   ├── Kconfig.projbuild          # Airbnk Gateway Kconfig options
-│   └── main.c                     # Entry point (WiFi init + gateway start)
+├── esp32-door-lock.yaml              # ESPHome device config
 ├── components/
-│   └── airbnk_gateway/            # BLE-to-MQTT gateway component (pure ESP-IDF)
-│       ├── CMakeLists.txt
-│       ├── include/
-│       │   ├── airbnk_gateway.h   # Public API: start/stop + config struct
-│       │   ├── airbnk_ble.h       # BLE subsystem (NimBLE-based scan/connect/command)
-│       │   ├── airbnk_mqtt.h      # MQTT subsystem (publish adv/result, subscribe cmd)
-│       │   └── airbnk_utils.h     # Hex conversion, MAC comparison helpers
-│       └── src/
-│           ├── airbnk_gateway.c   # Glue layer: BLE↔MQTT bridging
-│           ├── airbnk_ble.c       # BLE implementation (raw NimBLE GAP/GATT)
-│           ├── airbnk_mqtt.c      # MQTT implementation (esp_mqtt_client)
-│           └── airbnk_utils.c     # Utility implementations
-├── esp32-door-lock.yaml           # Alternative: ESPHome config (uses old airbnk-gateway.h)
-├── components/
-│   └── airbnk-gateway.h           # Old ESPHome component (Arduino/NimBLE-Arduino based)
-├── secrets/
-│   └── secrets.yaml.example       # Template for ESPHome secrets
-├── .gitea/
-│   └── workflows/
-│       └── ci.yaml                # Gitea Actions CI
+│   └── airbnk_gateway/              # ESPHome external component
+│       ├── __init__.py              # Python codegen (config schema)
+│       ├── airbnk_gateway.h         # C++ header
+│       ├── airbnk_gateway.cpp       # C++ implementation (NimBLE + MQTT)
+│       └── CMakeLists.txt           # ESP-IDF component registration
+├── secrets.yaml.example              # Template for secrets
 └── README.md
 ```
 
-## Build (ESP-IDF)
+## Key Technical Details
 
-```bash
-# 1. Set up ESP-IDF environment
-. ~/esp-idf/export.sh
+- **BLE:** Standalone NimBLE host (not ble_client / esp32_ble_tracker)
+  — connect-on-demand pattern for Airbnk lock protocol
+- **MQTT:** Uses `mqtt::global_mqtt_client` from ESPHome's built-in MQTT
+- **Framework:** ESP-IDF 5.5.4 on ESP32-C3
+- **No Arduino.h dependency** — pure ESP-IDF + ESPHome Component API
+- **No crypto on ESP32** — the HA integration generates commands
 
-# 2. Configure (set WiFi SSID/password, lock MAC, MQTT broker)
-idf.py menuconfig
-# → Airbnk Gateway Configuration
-# → Component config → Wi-Fi
+## Credits
 
-# 3. Build
-idf.py build
-
-# 4. Flash
-idf.py -p /dev/ttyUSB0 flash monitor
-```
-
-### Default Configuration (sdkconfig.defaults)
-
-- **Lock MAC:** `E4:E1:12:C7:5C:52`
-- **MQTT broker:** `mqtt://192.168.6.11`
-- **MQTT topic prefix:** `tele/maindoor`
-- **ESP32 target:** `esp32c3`
-- **BLE stack:** NimBLE (controller-only, BLE-only mode)
-
-## Build (ESPHome — legacy)
-
-The `esp32-door-lock.yaml` and `components/airbnk-gateway.h` provide an ESPHome-based
-alternative that uses NimBLE-Arduino. This is the original approach that depends on
-Arduino.h. The ESP-IDF native component in `components/airbnk_gateway/` is the
-recommended path going forward.
-
-## Integration
-
-After flashing, configure [rospogrigio/airbnk_mqtt](https://github.com/rospogrigio/airbnk_mqtt)
-in Home Assistant:
-
-1. Add the custom integration via HACS or manual copy
-2. Enter your Airbnk/WeHere email
-3. Enter verification code
-4. For each lock, enter:
-   - MQTT topic: `tele/maindoor`
-   - Lock MAC address
+- [formatBCE](https://github.com/formatBCE/Airbnk-MQTTOpenGateway) —
+  original gateway firmware
+- [rospogrigio](https://github.com/rospogrigio/airbnk_mqtt) —
+  Home Assistant integration

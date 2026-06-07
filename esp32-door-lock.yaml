@@ -1,10 +1,10 @@
-# ESPHome — Airbnk BLE-MQTT Bridge
-# ESP32-C3, ESP-IDF NimBLE, esphome 2026.6+
+# ESPHome — Airbnk BLE-MQTT Gateway
+# ESP32-C3, ESP-IDF NimBLE, esphome 2026.5+
 # Pure MQTT bridge: lock scan, advertisement to MQTT,
 # command push.
 
 substitutions:
-  # --- Device info ---
+  # Device info
   name: "esp32-door-lock"
   friendly_name: "ESP32 Door Lock Bridge"
   device_id: "aaa5a38"
@@ -12,10 +12,10 @@ substitutions:
   # --- Airbnk lock MAC (put your MAC!) ---
   lock_mac: "E4:E1:12:C6:53:55"
 
-  # --- MQTT topic prefix ---
+  # MQTT topic prefix
   mqtt_topic_prefix: "airbnk/${device_id}"
 
-  # --- MQTT broker ---
+  # MQTT broker
   mqtt_broker: "192.168.6.11"
   mqtt_port: "1883"
 
