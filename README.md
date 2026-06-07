@@ -63,12 +63,27 @@ substitutions:
   lock_mac: "E4:E1:12:C7:5C:52"   # ← change this
 ```
 
-### 4. Compile & flash
+### 4. Deploy
+
+**Option A — standalone ESPHome (CLI):**
 
 ```bash
 esphome compile esp32-door-lock.yaml
 esphome upload esp32-door-lock.yaml
 ```
+
+**Option B — ESPHome add-on in Home Assistant:**
+
+Copy the files into the ESPHome config directory on your HA machine.
+
+```bash
+# From the repo root:
+cp esp32-door-lock.yaml /path/to/ha/config/esphome/
+cp -r components/airbnk_gateway/ /path/to/ha/config/esphome/components/
+```
+
+Then open the ESPHome add-on UI, you should see "esp32-door-lock"
+in the list. Click Install.
 
 ### 5. Configure Home Assistant
 
